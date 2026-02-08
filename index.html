@@ -1,16 +1,410 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Samarth & Muskan's Wedding Reveal</title>
+    
+    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Montserrat:wght@400;600&display=swap" rel="stylesheet">
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
-</html>
+    <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS (CDN for standalone usage) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Canvas Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
+    <style>
+        /* Custom Font Families */
+        .font-great-vibes { font-family: 'Great Vibes', cursive; }
+        .font-montserrat { font-family: 'Montserrat', sans-serif; }
+
+        /* Animation Utilities */
+        .fade-in-up {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+        }
+        .fade-in-up.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .scale-in {
+            opacity: 0;
+            transform: scale(0.95);
+            transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+        }
+        .scale-in.visible {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .fade-in {
+            opacity: 0;
+            transition: opacity 0.5s ease-out;
+        }
+        .fade-in.visible {
+            opacity: 1;
+        }
+
+        /* Scratch Card Container */
+        .scratch-container {
+            position: relative;
+            width: 100%;
+            max-width: 450px;
+            aspect-ratio: 1 / 1;
+            margin: 0 auto;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        /* Hashtag Layer */
+        .hashtag-layer {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 0;
+        }
+
+        /* Canvas Layer */
+        canvas {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            cursor: pointer;
+            touch-action: none; /* Prevent scrolling while scratching */
+            transition: opacity 0.7s ease;
+        }
+        
+        canvas.revealed {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* Pulse Animation */
+        @keyframes pulse-text {
+            0%, 100% { opacity: 1; }
+            50% { opacity: .5; }
+        }
+        .animate-pulse-text {
+            animation: pulse-text 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+    </style>
+</head>
+<body class="bg-stone-50 min-h-screen overflow-x-hidden overflow-y-auto">
+
+    <!-- Decorative Background -->
+    <div class="fixed top-0 left-0 w-full h-full overflow-hidden pointer-events-none opacity-30 z-0">
+        <div class="absolute -top-20 -left-20 w-64 h-64 bg-rose-200 rounded-full blur-3xl"></div>
+        <div class="absolute top-40 right-0 w-72 h-72 bg-amber-100 rounded-full blur-3xl"></div>
+        <div class="absolute bottom-0 left-1/3 w-96 h-96 bg-rose-100 rounded-full blur-3xl"></div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="relative z-10 flex flex-col items-center justify-start pt-12 pb-8 px-4 min-h-screen">
+        
+        <div class="w-full max-w-lg flex flex-col items-center gap-6 md:gap-10">
+            
+            <!-- Header Section -->
+            <div id="header-section" class="text-center space-y-3 md:space-y-5 shrink-0 fade-in-up">
+                <h1 class="font-montserrat text-xl md:text-2xl text-stone-600 tracking-wide uppercase font-medium">
+                    Hashtag Reveal!
+                </h1>
+                
+                <div class="font-great-vibes text-5xl md:text-7xl text-stone-800 leading-tight">
+                    Samarth & Muskan
+                </div>
+
+                <p class="font-montserrat text-stone-600 text-sm md:text-lg leading-relaxed max-w-md mx-auto px-2">
+                    are getting married on <span class="font-semibold text-rose-500">8th & 9th March</span>.
+                    <br />
+                    We're super duper excited for the wedding. Are you!?
+                </p>
+            </div>
+
+            <!-- Scratch Card Section -->
+            <div id="scratch-section" class="w-full flex flex-col items-center justify-center relative scale-in delay-300">
+                
+                <!-- Scratch Instruction Label -->
+                <div id="scratch-label" class="absolute -top-8 left-0 right-0 text-center z-20 transition-opacity duration-500">
+                    <span class="text-xs font-montserrat text-stone-400 uppercase tracking-widest animate-pulse-text">
+                        Scratch to Reveal
+                    </span>
+                </div>
+
+                <div class="scratch-container">
+                    <!-- Background Layer (The Hashtag) -->
+                    <div class="hashtag-layer">
+                        <div class="text-center transform -rotate-12">
+                            <h2 class="font-montserrat font-bold text-xl md:text-2xl text-rose-600 drop-shadow-sm px-4 tracking-wider">
+                                #SamGotMusTaken
+                            </h2>
+                        </div>
+                    </div>
+
+                    <!-- Foreground Layer (The Scratch Card) -->
+                    <canvas id="scratchCanvas"></canvas>
+                </div>
+            </div>
+
+            <!-- Footer / Reveal Message -->
+            <div class="h-20 flex items-center justify-center shrink-0 w-full">
+                <div id="footer-message" class="text-center fade-in-up hidden">
+                    <h3 class="font-great-vibes text-4xl md:text-5xl text-stone-800 mb-2">
+                        See you there!
+                    </h3>
+                    <div class="w-16 h-1 bg-rose-400 mx-auto rounded-full"></div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // --- Configuration ---
+        const CONFIG = {
+            width: 450,
+            height: 450,
+            brushSize: 30,
+            revealThreshold: 25 // Percentage of opaque pixels remaining to trigger reveal
+        };
+
+        // --- State ---
+        let isRevealed = false;
+        let isDrawing = false;
+        let lastPos = null;
+
+        // --- Elements ---
+        const canvas = document.getElementById('scratchCanvas');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        const footerMessage = document.getElementById('footer-message');
+        const scratchLabel = document.getElementById('scratch-label');
+
+        // --- Initialization ---
+        function init() {
+            // Set canvas resolution
+            canvas.width = CONFIG.width;
+            canvas.height = CONFIG.height;
+
+            // Draw initial heart
+            drawGoldHeart(CONFIG.width, CONFIG.height);
+
+            // Trigger entrance animations
+            setTimeout(() => {
+                document.getElementById('header-section').classList.add('visible');
+            }, 100);
+            setTimeout(() => {
+                document.getElementById('scratch-section').classList.add('visible');
+            }, 400);
+
+            // Event Listeners
+            addEventListeners();
+        }
+
+        // --- Drawing Logic ---
+        function drawGoldHeart(w, h) {
+            ctx.save();
+            ctx.beginPath();
+            
+            // Heart path
+            ctx.moveTo(w / 2, h * 0.2);
+            ctx.bezierCurveTo(w / 2, h * 0.15, w * 0.1, h * 0.05, w * 0.1, h * 0.45);
+            ctx.bezierCurveTo(w * 0.1, h * 0.65, w * 0.4, h * 0.85, w / 2, h * 0.95);
+            ctx.bezierCurveTo(w * 0.6, h * 0.85, w * 0.9, h * 0.65, w * 0.9, h * 0.45);
+            ctx.bezierCurveTo(w * 0.9, h * 0.05, w / 2, h * 0.15, w / 2, h * 0.2);
+            
+            ctx.closePath();
+            ctx.clip();
+
+            // Gold Gradient
+            const gradient = ctx.createLinearGradient(0, 0, w, h);
+            gradient.addColorStop(0, '#BF953F');
+            gradient.addColorStop(0.25, '#FCF6BA');
+            gradient.addColorStop(0.5, '#B38728');
+            gradient.addColorStop(0.75, '#FBF5B7');
+            gradient.addColorStop(1, '#AA771C');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, w, h);
+
+            // Glitter Noise
+            for (let i = 0; i < 800; i++) {
+                ctx.fillStyle = Math.random() > 0.5 ? '#FFF' : '#FFD700';
+                ctx.globalAlpha = Math.random() * 0.8;
+                ctx.beginPath();
+                ctx.arc(
+                    Math.random() * w,
+                    Math.random() * h,
+                    Math.random() * 2,
+                    0,
+                    Math.PI * 2
+                );
+                ctx.fill();
+            }
+            
+            ctx.restore();
+        }
+
+        function scratch(x, y) {
+            ctx.globalCompositeOperation = 'destination-out';
+            ctx.beginPath();
+            ctx.arc(x, y, CONFIG.brushSize, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Smooth line
+            if (lastPos) {
+                ctx.beginPath();
+                ctx.lineWidth = CONFIG.brushSize * 2;
+                ctx.lineCap = 'round';
+                ctx.moveTo(lastPos.x, lastPos.y);
+                ctx.lineTo(x, y);
+                ctx.stroke();
+            }
+        }
+
+        // --- Interaction Handlers ---
+        function getMousePos(e) {
+            const rect = canvas.getBoundingClientRect();
+            let clientX, clientY;
+
+            if (e.touches && e.touches.length > 0) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+
+            // Scale coordinates
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+
+            return {
+                x: (clientX - rect.left) * scaleX,
+                y: (clientY - rect.top) * scaleY
+            };
+        }
+
+        function handleStart(e) {
+            if (isRevealed) return;
+            isDrawing = true;
+            const pos = getMousePos(e);
+            lastPos = pos;
+            scratch(pos.x, pos.y);
+        }
+
+        function handleMove(e) {
+            if (!isDrawing || isRevealed) return;
+            
+            // Prevent default only if needed (usually handled by CSS touch-action: none)
+            // e.preventDefault(); 
+
+            const pos = getMousePos(e);
+            scratch(pos.x, pos.y);
+            lastPos = pos;
+
+            // Throttle check
+            if (Math.random() > 0.8) checkProgress();
+        }
+
+        function handleEnd() {
+            isDrawing = false;
+            lastPos = null;
+            checkProgress();
+        }
+
+        function addEventListeners() {
+            // Mouse
+            canvas.addEventListener('mousedown', handleStart);
+            canvas.addEventListener('mousemove', handleMove);
+            canvas.addEventListener('mouseup', handleEnd);
+            canvas.addEventListener('mouseleave', handleEnd);
+
+            // Touch
+            canvas.addEventListener('touchstart', handleStart, { passive: false });
+            canvas.addEventListener('touchmove', handleMove, { passive: false });
+            canvas.addEventListener('touchend', handleEnd);
+        }
+
+        // --- Game Logic ---
+        function checkProgress() {
+            if (isRevealed) return;
+
+            const imageData = ctx.getImageData(0, 0, CONFIG.width, CONFIG.height);
+            const pixels = imageData.data;
+            let opaquePixels = 0;
+
+            // Optimization: check every 16th pixel (stride 4 * 4)
+            for (let i = 3; i < pixels.length; i += 16) {
+                if (pixels[i] > 0) opaquePixels++;
+            }
+
+            const totalSamples = pixels.length / 16;
+            const opaquePercentage = (opaquePixels / totalSamples) * 100;
+
+            if (opaquePercentage < CONFIG.revealThreshold) {
+                revealAll();
+            }
+        }
+
+        function revealAll() {
+            isRevealed = true;
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, CONFIG.width, CONFIG.height);
+            canvas.classList.add('revealed');
+            
+            // Hide label
+            if (scratchLabel) scratchLabel.style.opacity = '0';
+
+            // Show footer
+            footerMessage.classList.remove('hidden');
+            // Trigger reflow
+            void footerMessage.offsetWidth; 
+            footerMessage.classList.add('visible');
+
+            // Fireworks
+            triggerFireworks();
+        }
+
+        function triggerFireworks() {
+            const duration = 5 * 1000;
+            const animationEnd = Date.now() + duration;
+            const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
+
+            const randomInRange = (min, max) => Math.random() * (max - min) + min;
+
+            const interval = setInterval(function () {
+                const timeLeft = animationEnd - Date.now();
+
+                if (timeLeft <= 0) {
+                    return clearInterval(interval);
+                }
+
+                const particleCount = 50 * (timeLeft / duration);
+                
+                confetti({
+                    ...defaults,
+                    particleCount,
+                    origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 }
+                });
+                confetti({
+                    ...defaults,
+                    particleCount,
+                    origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 }
+                });
+            }, 250);
+        }
+
+        // Start
+        window.onload = init;
+
+    </script>
+</body>
+</html>
